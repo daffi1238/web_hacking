@@ -6,13 +6,14 @@ services:
             - "3306:3306"
         command: --default-authentication-plugin=mysql_native_password
         environment:
-            MYSQL_DATABASE: dbname
+            MYSQL_DATABASE: app
             MYSQL_PASSWORD: test
-            MYSQL_ROOT_PASSWORD: test
+            MYSQL_ROOT_PASSWORD: 4_V3Ry_l0000n9_p422w0rd
+            MYSQL_USER: test
         volumes:
             - ./dump:/docker-entrypoint-initdb.d
             - ./conf:/etc/mysql/conf.d
-            - ./mysql2:/var/lib/mysql
+            - ./mysql:/var/lib/mysql
         networks:
             - default
     www:
@@ -20,7 +21,7 @@ services:
         ports:
             - "80:80"
         volumes:
-            - ./html2:/var/www/html
+            - ./html:/var/www/html
         links:
             - db
         networks:
