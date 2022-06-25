@@ -1,0 +1,54 @@
+# VOCE CHANGE LOG & HISTORY
+
+https://limbenjamin.com/pages/voce-wp
+
+Author: Benjamin Lim
+
+*******************************************************************
+
+**v1.1.0**
+- Removed fallback for nav menu. Better no menu than ugly menu.
+
+
+**v1.0.8**
+- Fixed bug in sanitize function not allowing null values
+
+
+**v1.0.7**
+- Escaped home_url()
+- Used wordpress search form
+- other minor fixes
+
+
+**v1.0.6**
+- content_width has to set as global 
+- other minor fixes
+
+
+**v1.0.5**
+- Enqueue fonts
+
+
+**v1.0.4**
+- Fixes to be compliant with WP theme team feedback
+
+
+**v1.0.3**
+- Fixes to be compliant with WP theme team feedback
+
+
+**v1.0.2**
+- Fixes to be compliant with WP theme team feedback
+
+
+**v1.0.1**
+- Remove hard coding of script and style files.
+- Added Theme prefix for functions, global variables, constants, post meta, etc.
+- Used WordPress functionality and features first, if available.
+- Used the_posts_pagination().
+- Removed favicon code.
+- Sanitization and escaping of variables.
+
+
+**v1.0.0**
+- Initial release

@@ -1,0 +1,19 @@
+
+# BEGIN WordPress
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /webservices/wp/
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /webservices/wp/index.php [L]
+</IfModule>
+# END WordPress
+
+# BEGIN Brute Force Login Protection
+<FilesMatch ".*\.(php|html?|css|js|jpe?g|png|gif)$">
+order deny,allow
+ErrorDocument 403 "You Shall Not Pass!"
+deny from 192.168.80.1
+</FilesMatch>
+# END Brute Force Login Protection

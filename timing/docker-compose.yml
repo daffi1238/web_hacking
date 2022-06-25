@@ -12,7 +12,7 @@ services:
             MYSQL_USER: test
         volumes:
             - ./dump:/docker-entrypoint-initdb.d
-            - ./conf:/etc/mysql/conf.d
+            - ./config2/my.cnf:/etc/mysql/my.cnf
             - ./mysql:/var/lib/mysql
         networks:
             - default
