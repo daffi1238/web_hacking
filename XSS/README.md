@@ -488,7 +488,7 @@ the %0A is URL-decoded to become a newline, signaling the end of the comment.
 Context, we have a XSS but in a pages where we can not exploit nothing at begin... but
 If you use an iframe to cover the whole web and show the new web. This way we make the user execute the script in the top level.
 Cons:
-- Url never change even if we navigate over others webs -> HTML5 allow you change the url in the browser!  `window.history.pushState()`
+- Url never change even if we navigate over others webs -> HTML5 allow you change the url in the browser!  `window.history.pushState()` (Not the domain my friend!)
 
 Example of this kind of attack:
 http://blog.kotowicz.net/2010/11/xss-track-how-to-quietly-track-whole.html
@@ -518,8 +518,13 @@ https://www.rapid7.com/blog/post/2022/05/04/xss-in-json-old-school-attacks-for-m
 
 Even if you are adding a xss payload into a json format content this content may be later added to a Database and could inject this into some web with some .innerHTML instead of .innerTEXT.
 
+1. You need to find a means of causing a victim user to make the necessary request cross-domain.
+2. You need to fi nd a way of manipulating the response so that it executes your script when consumed by the browser (XMLHttpRequest)
+
+XMLHttpRequest by default doen't allow cross-domain requests but have been modified in HTML5 where you can define other external domain where you can accept an XMLHttpRequest!
+
 **Sending XML Requests Cross-Domain**
-We can send near-arbitraty data cross-domain withing HTTP request body with an HTML form, that with the _enctype_ we add to the header in the _Content-type_ _text/plain_ and make the browser handle the form parameters as:
+We can send near-arbitraty data cross-domain withing HTTP request body with an HTML form, that with the _enctype_ we add to the header in the _Content-type_ _text/plain_ and make the browser  handle the form parameters as:
 - Send each parameter on a separate line within the request
 - Use '=' to separate key and value (normal behaviour)
 - Do not perform any URL encoding of the parameters name o value.
@@ -539,10 +544,10 @@ value=’”1.0”?><data><param>foo</param></data>’>
 </form><script>document.forms[0].submit();</script>
 ```
 
-To include common attack characters within the value of the param parameter,
-such as tag angle brackets, these would need to be HTML-encoded within the
-XML request. Therefore, they would need to be double HTML-encoded within
-the HTML form that generates that request.
+>To include common attack characters within the value of the param parameter,
+>such as tag angle brackets, these would need to be HTML-encoded within the
+>XML request. Therefore, they would need to be double HTML-encoded within
+>the HTML form that generates that request.
 
 With this technique we can make with a easy form send an XML, Json even some specifically serialized binary request.
  You can use this technique to submit cross-domain requests containing
@@ -557,7 +562,7 @@ What are the problem?
 The request have in the header _Content-Type: text/plain_. In case that the app allow several content-types no problem, we can inject xml, json or serialized object, but in case that not we have nothing to do here.
 
 Searching for XSS:
-- [ ] First thing to do should be check in the behaviour remains changing the Content-Type to text/plain.
+- [ ] First thing to do should be check in the behaviour remains changing the Content-Type to text/plain, if stil works continue searching for the attack, if not nothing to do!
 
 
 **Executing JavaScript from Within XML Responses**
@@ -575,16 +580,96 @@ Content-Type: text/xml
 Content-Length: 1098
 <xml>
 <data>
-...
+.
+.
+.
 <a xmlns:a='http://www.w3.org/1999/xhtml'>
 <a:body onload='alert(1)'/></a>
-...
+.
+.
+.
 </data>
 </xml>
 ```
 
 **Attacking Browser XSS Filters**
 
+
+
+**Testing XSS in uploaded files (Image)**
+https://book.hacktricks.xyz/pentesting-web/file-upload
+
+To have into account:
+- If the application restric the file extension admited
+- If the application check the content to confirm that the content respect the format
+- If during the download the server return a a specific Content-type as could be _image/jpeg
+- If during the download the application returns in the header the _Content-Disposition_ 
+
+
+-->Hybrid File attack<--
+These kind of files are known as polyglots
+Sometimes to bypass the application type restriction we can use an hybrid type to cheat the App.
+
+*GIFAR*
+"GIFAR is based on polyglots that combine the GIF and JAR (Java archive) formats."
+An example of hybrid file is GIFAR, a mix of a Gif and a Jar file, the metadata realted to the gif are stored in the begin of the file and the metada related to the .jar file are located at the end.
+1. The attacker find a place where to upload gif file are allowed.
+2. Construct a GIFAR file that allow steal the session to another user who execute it.
+3. The attacker upload the GIFAR file as his profile picture, and if everything goes well it will be accepted cause the hybrid file.
+4. The attacker use a proper website that allows him upload HTML code from which to deliver an attack.
+5. On the external website the attacker uses the <applet> or <object> tag to load the GIFAR file from the compromised website as a Java applet.
+6. When a users visits the malicious website will load the GIFAR file executing its code as Java applet in his browser. For Java applets the same-origin works different. The applet is treated as belonging to the domain from which it was loaded, not the domain that invoked it. If the user were logged in the wesite or logged early and click over the keep session open the applet script have full access to the user session.
+
+-> Build your own
+https://labs.detectify.com/2015/05/28/building-an-xss-polyglot-through-swf-and-csp/
+http://www.matthewflickinger.com/lab/whatsinagif/bits_and_bytes.asp
+##This is the good guide!
+https://0x00sec.org/t/gif-javascript-polyglots-abusing-gifs-tags-and-mime-types-for-evil/
+https://resources.infosecinstitute.com/topic/exploit-xss-image/
+##Inject php inside a image !! LOL
+https://www.idontplaydarts.com/2012/06/encoding-web-shells-in-png-idat-chunks/
+
+When you need to investigate this better try to forge your own image.
+
+
+
+**XSS in file via AJAX**
+Ajax is used to render pages inside the page:
+`http://wahh-app.com/#profile`
+
+>When the user clicks the link, client-side code handles the click event, uses Ajax to retrieve the file shown after the fragment, and sets the response within the innerHtml of a <div> element in the existing page.
+
+This way if you are able to upload img in the webpage we could try to use AJAX to render an uploaded image with an embedded XSS payload.
+
+>Several browsers, including Firefox and Safari, happily render an image fi le as HTML. The binary parts of the image are displayed as junk, and any embedded HTML is displayed in the usual way.
+
+
+
+#### Finding and exploiting DOM-Based XSS
+DOM-based XSS vulnerabilities are found going manually to the webpage and assing values to the parameters to try standard tests:
+```
+"<script>alert(1)</alert>
+";alert(1)//
+'-alert(1)-'
+```
+With these standard test not always you can discover DOM-based XSS, te best way to be sure of this is locate and annalyze each field potentially vulnerable, that means all of the next javascript functions:
+```
+## DOM data controle by the URL
+document.location
+document.URL
+document.URLUnencoded
+document.referrer
+window.location
+
+## Other possibilities
+document.write()
+document.writeln()
+document.body.innerHtml
+eval()
+window.execScript()
+window.setInterval()
+window.setTimeout()
+```
 
 
 ###### Some more resources
@@ -607,3 +692,5 @@ https://hackerone.com/reports/1601140
 https://hackerone.com/reports/1367642
 ("></script><script>alert(document.cookie)</script>)
 ```
+## Resources
+https://book.hacktricks.xyz/pentesting-web/file-upload
